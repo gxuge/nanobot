@@ -1,0 +1,14 @@
+services:
+  nanobot:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: nanobot:qwen
+    container_name: nanobot
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ${NANOBOT_DATA_DIR:-./nanobot-data}:/root/.nanobot
+    command: ["gateway"]
+
