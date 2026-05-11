@@ -1,0 +1,51 @@
+{
+  "providers": {
+    "dashscope": {
+      "apiKey": "sk-fc57d4ee98e44b478cb38140775f62b0"
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": "qwen3.6-plus",
+      "workspace": "~/.nanobot/workspace",
+      "maxToolIterations": 20
+    }
+  },
+  "tools": {
+    "restrictToWorkspace": true
+  },
+  "channels": {
+    "telegram": {
+      "enabled": false
+    },
+    "discord": {
+      "enabled": false
+    },
+    "whatsapp": {
+      "enabled": false
+    },
+    "feishu": {
+      "enabled": true,
+      "appId": "cli_a833ee4eb1c3100c",
+      "appSecret": "wo25x12yCtE0lLxzqitXlhw0TM1oEMgg",
+      "encryptKey": "",
+      "verificationToken": "",
+      "allowFrom": []
+    },
+    "mochat": {
+      "enabled": false
+    },
+    "dingtalk": {
+      "enabled": false
+    },
+    "email": {
+      "enabled": false
+    },
+    "slack": {
+      "enabled": false
+    },
+    "qq": {
+      "enabled": false
+    }
+  }
+}
