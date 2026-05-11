@@ -2,6 +2,17 @@
 
 This project already supports Qwen via the `dashscope` provider.
 
+## China mainland mirror defaults in this repo
+
+This deployment now defaults to:
+
+- Docker base images: `ghcr.1ms.run/...` and `docker.1ms.run/...`
+- Debian apt mirror: `mirrors.aliyun.com`
+- Python package mirror: `https://mirrors.aliyun.com/pypi/simple/`
+- npm registry mirror: `https://registry.npmmirror.com`
+
+You can override all of them through compose build args.
+
 ## 1) Verify official API call first
 
 Use Alibaba Cloud DashScope OpenAI-compatible endpoint:
@@ -53,3 +64,17 @@ Stop:
 docker compose -f deploy/docker-compose.qwen.yml down
 ```
 
+## 4) Optional: override mirror settings
+
+Create `deploy/.env`:
+
+```bash
+UV_BASE_IMAGE=ghcr.1ms.run/astral-sh/uv:python3.12-bookworm-slim
+NODE_BASE_IMAGE=docker.1ms.run/library/node:20-bookworm-slim
+DEBIAN_MIRROR=mirrors.aliyun.com
+PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+PIP_EXTRA_INDEX_URL=https://pypi.org/simple
+NPM_REGISTRY=https://registry.npmmirror.com
+```
+
+Then run compose as usual.

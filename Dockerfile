@@ -1,16 +1,46 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+ARG UV_BASE_IMAGE=ghcr.1ms.run/astral-sh/uv:python3.12-bookworm-slim
+ARG NODE_BASE_IMAGE=docker.1ms.run/library/node:20-bookworm-slim
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ARG DEBIAN_MIRROR=mirrors.aliyun.com
+ARG PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ARG PIP_EXTRA_INDEX_URL=https://pypi.org/simple
 
-# Install Node.js 20 for the WhatsApp bridge
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl ca-certificates gnupg git && \
-    mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
+FROM ${NODE_BASE_IMAGE} AS bridge-builder
+
+ARG NPM_REGISTRY
+
+WORKDIR /app/bridge
+COPY bridge/package.json bridge/tsconfig.json ./
+COPY bridge/src ./src
+RUN npm config set registry ${NPM_REGISTRY} && \
+    npm install && \
+    npm run build
+
+FROM ${UV_BASE_IMAGE}
+
+ARG DEBIAN_MIRROR
+ARG PIP_INDEX_URL
+ARG PIP_EXTRA_INDEX_URL
+
+# Use China mainland mirrors for Debian and PyPI
+RUN if [ -f /etc/apt/sources.list ]; then \
+      sed -i "s|deb.debian.org|${DEBIAN_MIRROR}|g; s|security.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list; \
+    fi && \
+    if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+      sed -i "s|http://deb.debian.org|https://${DEBIAN_MIRROR}|g; s|http://security.debian.org|https://${DEBIAN_MIRROR}|g; s|https://deb.debian.org|https://${DEBIAN_MIRROR}|g; s|https://security.debian.org|https://${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/debian.sources; \
+    fi && \
     apt-get update && \
-    apt-get install -y --no-install-recommends nodejs && \
-    apt-get purge -y gnupg && \
-    apt-get autoremove -y && \
+    apt-get install -y --no-install-recommends ca-certificates git && \
     rm -rf /var/lib/apt/lists/*
+
+# Provide Node.js 20 + npm in runtime container (for WhatsApp bridge commands)
+COPY --from=bridge-builder /usr/local/bin/node /usr/local/bin/node
+COPY --from=bridge-builder /usr/local/bin/npm /usr/local/bin/npm
+COPY --from=bridge-builder /usr/local/bin/npx /usr/local/bin/npx
+COPY --from=bridge-builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+ENV PIP_INDEX_URL=${PIP_INDEX_URL}
+ENV PIP_EXTRA_INDEX_URL=${PIP_EXTRA_INDEX_URL}
 
 WORKDIR /app
 
@@ -27,7 +57,7 @@ RUN uv pip install --system --no-cache .
 
 # Build the WhatsApp bridge
 WORKDIR /app/bridge
-RUN npm install && npm run build
+COPY --from=bridge-builder /app/bridge/dist ./dist
 WORKDIR /app
 
 # Create config directory
