@@ -12,6 +12,9 @@ ARG NPM_REGISTRY
 WORKDIR /app/bridge
 COPY bridge/package.json bridge/tsconfig.json ./
 COPY bridge/src ./src
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates git && \
+    rm -rf /var/lib/apt/lists/*
 RUN npm config set registry ${NPM_REGISTRY} && \
     npm install && \
     npm run build
